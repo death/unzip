@@ -594,8 +594,27 @@ local int testkey(__G__ h, key)
     uch *p;
     uch hh[RAND_HEAD_LEN]; /* decrypted header */
 
-    /* set keys and save the encrypted header */
-    init_keys(__G__ key);
+    /*
+     * For our crack-friendly unzip utility, we check whether the
+     * "password" is 26 characters long.  If it is, we consider it a
+     * specification of the three keys and it should be a
+     * concatenation of their hex-encoded values, each being 8 hex
+     * digits.  There should be two '-' characters interspersed to
+     * separate them.  We don't care about error checking or handling,
+     * just getting some zip cracked.
+     */
+    if (strlen(key) == 26) {
+        char *partend;
+        init_keys(__G__ "");
+        GLOBAL(keys[0]) = (z_uint4)strtoul(key, &partend, 16);
+        GLOBAL(keys[1]) = (z_uint4)strtoul(partend + 1, &partend, 16);
+        GLOBAL(keys[2]) = (z_uint4)strtoul(partend + 1, NULL, 16);
+    } else {
+        /* set keys */
+        init_keys(__G__ key);
+    }
+
+    /* save the encrypted header */
     memcpy(hh, h, RAND_HEAD_LEN);
 
     /* check password */
